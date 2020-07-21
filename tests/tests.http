@@ -1,0 +1,13 @@
+
+### this file used by vscode 'humao.rest-client' extension  (recommended)
+
+
+###
+GET http://localhost:4000/api/portfolio/quote
+
+###
+GET http://localhost:4000/api/operation/
+
+###
+GET http://localhost:4000/api/operation/sold/BOVESPA/current_month
+

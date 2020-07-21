@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="shortcut icon" href="icons/favicon.ico" />
+
+    <title>Invest Monitor</title>
+
+
+
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap@4.5.0/dist/css/bootstrap.min.css" />
+
+    <script src="//unpkg.com/vue@2.6.11/dist/vue.min.js"></script>
+    <script src="//unpkg.com/vue-resource@1.5.1/dist/vue-resource.min.js"></script>
+
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/moment.min.js"></script>
+
+    <link type="text/css" rel="stylesheet" href="app.css" />
+
+</head>
+
+<body class="bg-light">
+    <div id="app">
+
+        <navbar-app :page="'portfolio'"></navbar-app>
+
+        <main v-if="conf!=null" class="container-fluid" style="padding-bottom: 20px;">
+
+            <div class="row">
+
+                <div class="col-lg-5">
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="updateAutoEnabled" v-on:change="saveConfig" v-model="conf.updateAutoEnabled">
+                        <label class="form-check-label" for="updateAutoEnabled">
+                        Atualização Automática
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="notifyEnabled" v-on:change="saveConfig" v-model="conf.notifyEnabled">
+                        <label class="form-check-label" for="notifyEnabled">
+                        Notificações
+                        </label>
+                    </div>
+                    <span v-show="loading">(loading)</span>
+                </div>
+                <div class="col-lg-1 text-right">
+                    <!--
+                    <button @click="showConfig=true;">Config</button>
+                    -->
+                </div>
+            </div>
+
+            <hr/>
+    
+            <h3>Resumo</h3>
+            <div class="row" v-if="portfolio != null">
+                <div class="col-lg-4">
+                    <div style="border: 1px solid #888; padding: 10px;">
+                        <div>
+                            - Variação da carteira hoje:
+                            <span v-bind:style="{color : portfolio.total.quote_variation_avg >= 0 ? 'green' : 'red'}">
+                                {{portfolio.total.quote_variation_avg | decimal}}% 
+                            </span>
+                            <span style="font-size: xx-small;">(média)</span>
+                        </div>
+                        <div>
+                            - ROI: 
+                            <span v-bind:style="{color : portfolio.total.roi >= 0 ? 'green' : 'red'}">
+                                {{portfolio.total.roi | decimal}}%
+                            </span>
+                        </div>
+                        <div>
+                            - Investido: R$ {{portfolio.total.invested | decimal}}
+                        </div>
+                        <div>
+                            - Ganho: 
+                            <span v-bind:style="{color : portfolio.total.gain >= 0 ? 'green' : 'red'}">
+                                R$ {{portfolio.total.gain | decimal}}
+                            </span>
+                        </div>
+                        <div>
+                            - Total: R$ {{portfolio.total.total | decimal}}
+                        </div>
+                        <div>
+                            - Vendidas no mês: R$ {{sumSoldStocksCurrentMonth | decimal}}
+                        </div>
+
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                </div>
+            </div>
+
+            <div v-if="closed" style="color: red; text-align: center;">
+                Bovespa fechado!
+            </div>
+
+            <hr/>
+
+            <h3>Papeis</h3>
+            <div class="table-responsive-lg">
+                <table v-if="stocks != null" class="table table-bordered" style="margin-top: 20px;">
+                    <thead>
+                        <tr style="background-color: #ddd;">
+                            <th scope="col" v-show="conf.columns.links" @dblclick="conf.columns.links=false"></th>
+                            <th scope="col" v-show="conf.columns.ticker" @dblclick="conf.columns.ticker=false">
+                                <span>Papel</span>
+                                <span @click="collapseAll(false)" style="cursor: pointer;">(+)</span>
+                                <span @click="collapseAll(true)" style="cursor: pointer;">(-)</span>
+                            </th>
+                            <th scope="col" v-show="conf.columns.quote" @dblclick="conf.columns.quote=false">Cotação</th>
+                            <th scope="col" v-show="conf.columns.target" @dblclick="conf.columns.target=false">Alvo</th>
+                            <th scope="col" v-show="conf.columns.price" @dblclick="conf.columns.price=false">Compra</th>
+                            <th scope="col" v-show="conf.columns.date" @dblclick="conf.columns.date=false">Data</th>
+                            <th scope="col" v-show="conf.columns.roi" @dblclick="conf.columns.roi=false">Retorno</th>
+                            <th scope="col" v-show="conf.columns.days" @dblclick="conf.columns.days=false">Dias</th>
+                            <th scope="col" v-show="conf.columns.roi_per_day" @dblclick="conf.columns.roi_per_day=false">ROI/dia</th>
+                            <th scope="col" v-show="conf.columns.gain" @dblclick="conf.columns.gain=false">Ganho</th>
+                            <th scope="col" v-show="conf.columns.amount" @dblclick="conf.columns.amount=false">Cotas</th>
+                            <th scope="col" v-show="conf.columns.total" @dblclick="conf.columns.total=false">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <template v-for="stk in stocks">
+                            <tr :key="stk.ticker">
+                                <td v-show="conf.columns.links" style="width: 50px; padding-left: 5px; padding-right: 5px; font-size: xx-small;">
+                                    <a :href="'https://finance.yahoo.com/chart/'+stk.ticker+'.SA?t=1d'" target="_blank">(Y)</a> 
+                                    <a :href="'https://www.google.com/search?q='+stk.ticker" target="_blank">(G)</a> 
+                                </td>
+                                <td v-show="conf.columns.ticker">
+                                    <span @mouseover="sel=stk" @mouseleave="sel=null" style="font-weight: bold;">{{stk.ticker}}</span>
+                                    <span v-show="stk.items.length > 1" @click="toggleCollapse(stk)" style="cursor: pointer;">({{stk.items.length}})</span>
+                                </td>
+                                <td v-show="conf.columns.quote">
+                                    {{stk.quote.price | decimal}} 
+                                    (<span v-bind:style="{color : stk.quote.variation >= 0 ? 'green' : 'red', fontSize: 'xx-small'}">{{stk.quote.variation | decimal}}%</span>)
+                                </td>
+                                <td v-show="conf.columns.target">
+                                    {{stk.target | decimal}}
+                                </td>
+                                <td v-show="conf.columns.price">
+                                    {{stk.calc.price | decimal}}
+                                </td>
+                                <td v-show="conf.columns.date">
+                                    {{stk.last_buy | date}}
+                                </td>
+                                <td v-show="conf.columns.roi" v-bind:style="{color : stk.calc.roi >= 0 ? 'green' : 'red'}">
+                                    {{stk.calc.roi | decimal(0,2)}}%
+                                </td>
+                                <td v-show="conf.columns.days">
+                                    {{stk.calc.days | decimal(0,1)}}
+                                </td>
+                                <td v-show="conf.columns.roi_per_day" v-bind:style="{color : stk.calc.roi_per_day >= 0 ? 'green' : 'red'}">
+                                    {{stk.calc.roi_per_day | decimal}}%
+                                </td>
+                                <td v-show="conf.columns.gain" v-bind:style="{color : stk.calc.gain >= 0 ? 'green' : 'red'}">
+                                    R$ {{stk.calc.gain | decimal}}
+                                </td>
+                                <td v-show="conf.columns.amount">
+                                    {{stk.amount}}
+                                </td>
+                                <td v-show="conf.columns.total">
+                                    R$ {{stk.calc.total | decimal}}
+                                </td>
+                            </tr>
+
+                            <template v-for="op in stk.items">
+
+                                <tr v-if="stk.items.length > 1" :key="op.id" class="tr-operation" v-show="!stk.collapse">
+                                    <td v-show="conf.columns.links">
+                                    </td>
+                                    <td v-show="conf.columns.ticker">
+                                    </td>
+                                    <td v-show="conf.columns.quote">
+                                    </td>
+                                    <td v-show="conf.columns.target">
+                                    </td>
+                                    <td v-show="conf.columns.price">
+                                        {{op.price | decimal}}
+                                    </td>
+                                    <td v-show="conf.columns.date">
+                                        {{op.date | date}}
+                                    </td>
+                                    <td v-show="conf.columns.roi" v-bind:style="{color : stk.calc.roi >= 0 ? 'green' : 'red'}">
+                                        {{op.calc.roi | decimal(0,2)}}%
+                                    </td>
+                                    <td v-show="conf.columns.days">
+                                        {{op.calc.days}}
+                                    </td>
+                                    <td v-show="conf.columns.roi_per_day" v-bind:style="{color : stk.calc.roi_per_day >= 0 ? 'green' : 'red'}">
+                                        {{op.calc.roi_per_day | decimal}}%
+                                    </td>
+                                    <td v-show="conf.columns.gain" v-bind:style="{color : stk.calc.gain >= 0 ? 'green' : 'red'}">
+                                        R$ {{op.calc.gain | decimal}}
+                                    </td>
+                                    <td v-show="conf.columns.amount">
+                                        {{op.amount}}
+                                    </td>
+                                    <td v-show="conf.columns.total">
+                                        R$ {{op.calc.total | decimal}}
+                                    </td>
+                                </tr>
+    
+                            </template>
+
+                        </template>
+
+                        <tr class="tr-total">
+                            <td v-show="conf.columns.links"></td>
+                            <td v-show="conf.columns.ticker"><b>TOTAL<b></td>
+                            <td v-show="conf.columns.quote">
+                                <span v-bind:style="{color : portfolio.total.quote_variation_avg >= 0 ? 'green' : 'red'}">
+                                    {{portfolio.total.quote_variation_avg | decimal}}% 
+                                </span>
+                                <span style="font-size: xx-small;">(média)</span>
+                            </td>
+                            <td v-show="conf.columns.target"></td>
+                            <td v-show="conf.columns.price"></td>
+                            <td v-show="conf.columns.date"></td>
+                            <td v-show="conf.columns.roi" v-bind:style="{color : portfolio.total.roi >= 0 ? 'green' : 'red'}">
+                                {{portfolio.total.roi | decimal}}%
+                            </td>
+                            <td v-show="conf.columns.days"></td>
+                            <td v-show="conf.columns.roi_per_day"></td>
+                            <td v-show="conf.columns.gain" v-bind:style="{color : portfolio.total.gain >= 0 ? 'green' : 'red'}">
+                                R$ {{portfolio.total.gain | decimal}}
+                            </td>
+                            <td v-show="conf.columns.amount"></td>
+                            <td v-show="conf.columns.total">R$ {{portfolio.total.total | decimal}}</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="details" v-if="sel != null" class="shadow">
+                <h2>{{sel.ticket}}</h2>
+                <div class="box-notes">{{sel.notes}}</div>
+                <ul>
+                    <li>Ganho: R$ {{sel.calc.gain | decimal}}</li>
+                    <li>Investido: R$ {{sel.calc.total - sel.calc.gain | decimal}}</li>
+                    <li>Total: R$ {{sel.calc.total | decimal}}</li>
+                </ul>
+            </div>
+
+
+
+
+            <div style="font-size: xx-small; text-align: right;">
+                Últ. Atualização: {{lastUpdate | datetime}}
+            </div>
+
+            <div v-if="closed" style="color: red; text-align: center;">
+                    Bovespa fechado!
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <style>
+
+        .table {
+            font-size: x-small;
+            
+        }
+        td {
+            padding: 10px;
+        }
+
+        .tr-total > td {
+            padding-top: 30px;
+            border: 2px solid #bbb;
+            font-weight: bold;
+            background-color: #ddd;
+        }
+        .tr-operation > td {
+            font-size: xx-small;
+            padding-top: 3px;
+            padding-bottom: 8px;
+            background-color: #fff;
+        }
+
+        #details {
+            position:fixed;
+            top:120px; 
+            width: 50%; 
+            right: 10px; 
+
+            padding: 20px;
+
+            background-color: #FFF;
+            border: 1px solid #999;
+            border-radius: 10px;
+        }
+
+        .box-notes {
+            font-weight: bold;
+            padding:10px; 
+            margin-bottom: 20px;
+            border: 1px dotted orange;
+        }
+
+
+    </style>
+
+
+    <script src="navbar-app.js"></script>
+    <script src="vue-utils.js"></script>
+    <script>
+
+
+Vue.config.devtools = true;
+
+Vue.config.productionTip = false;
+
+
+Vue.use(VueResource);
+
+
+var app = new Vue({
+    el: '#app',
+    data: {
+        portfolio : null,
+        stocks : null,
+        lastUpdate: null,
+        sel: null,
+
+        conf: null,
+        confDefault: {
+            updateAutoEnabled: true,
+            notifyEnabled: true,
+            columns: {
+                links: true,
+                ticker: true,
+                quote: true,
+                target: false,
+                price: true,
+                date: true,
+                roi: true,
+                days: true,
+                roi_per_day:true,
+                gain: true,
+                amount: true,
+                total: true,
+            },
+            sortStocksBy : 'last_buy', // last_buy | last_operation | ticker
+            sortStocksAsc : false,
+            collapseDefault : false,
+        },
+        showConfig: true,
+
+        ibov: {},
+        btcbrl: {},
+
+        closed: false,
+        sumSoldStocksCurrentMonth: 0,
+        loading: false,
+    },
+    mounted: function () {
+
+        // FUTURE load from localStorage
+        this.conf = JSON.parse(JSON.stringify(this.confDefault));
+
+
+        this.portifolioQuote();
+
+        setInterval(()=>{
+            if ( ! this.conf.updateAutoEnabled) {
+                return;
+            }
+            this.portifolioQuote();
+        }, 30*1000);
+
+        this.$http.get('../api/operation/sold/BOVESPA/current_month').then(rs => {
+            this.sumSoldStocksCurrentMonth = rs.body['BOVESPA'];
+        });
+
+    },
+    methods: {
+
+        saveConfig: function () {
+            console.log('salvou')
+            console.log(JSON.stringify(this.conf))
+            // FUTURE save in localStorage
+        },
+
+        portifolioQuote: function () {
+
+            var hours = new Date().getHours();
+            if ((hours < 10 || hours >= 17) && this.lastUpdate != null) {
+                this.closed = true;
+                return;
+            }
+            this.closed = false;
+
+            this.loading = true;
+            this.$http.get('../api/portfolio/quote').then(rs => {
+
+                this.portfolio = rs.body;
+
+                let stocks = []
+
+                for (let ticker in this.portfolio.stocks) {
+                    let stock = this.portfolio.stocks[ticker];
+
+                    stock.collapse = this.conf.collapseDefault;
+
+                    stocks.push(stock);
+
+                    if (stock.target && stock.quote.price >= stock.target) {
+                        // notificar
+                        if (this.conf.notifyEnabled) { //  &&  ! stock.notified
+                            var n = new Notification("Papel atingiu: "+stock.ticker, {
+                                body: stock.ticker+" atual "+stock.quote.price+"\n"+"Alvo: "+stock.target,
+                                icon: 'growth-icon-512x512.png'
+                            });
+                        }
+                        //stock.notified = !stock.notified;
+                    }
+                    else {
+                        //stock.notified = false;
+                    }
+
+                }
+
+                var sortBy = this.conf.sortStocksBy;
+                var sortAsc = this.conf.sortStocksAsc ? 1 : -1;
+                stocks.sort((a, b) => (a[sortBy] > b[sortBy]) ? sortAsc : sortAsc*-1);
+
+
+                this.stocks = stocks;
+
+                this.lastUpdate = new Date();
+
+                app.$forceUpdate();
+
+                this.loading = false;
+
+            }).catch(rs => {
+                console.log(rs);
+                if (this.conf.notifyEnabled) {
+                    new Notification("Invest OFF ");
+                }
+                this.loading = false;
+            });
+
+
+        },
+
+        changeSortStocks: function (field) {
+            if (this.conf.sortStocksBy == field) {
+                this.conf.sortStocksAsc = ! this.conf.sortStocksAsc;
+            }
+            else {
+                this.conf.sortStocksBy = field;
+            }
+
+            var sortBy = this.conf.sortStocksBy;
+            var sortAsc = this.conf.sortStocksAsc ? 1 : -1;
+            stocks.sort((a, b) => (a[sortBy] > b[sortBy]) ? sortAsc : sortAsc*-1);
+
+            // TODO save conf
+        },
+
+        toggleCollapse: function(stk) {
+            stk.collapse = !stk.collapse;
+            app.$forceUpdate();
+        },
+
+        collapseAll: function(collapse) {
+            for (let stk of this.stocks) {
+                stk.collapse = collapse;
+            }
+            app.$forceUpdate();
+        },
+
+    }
+});
+
+
+
+
+if (window.Notification && window.Notification.permission != 'granted') {
+    Notification.requestPermission().then(status => {
+        console.log('Notification permissão:'+status);
+    });
+}
+
+
+    </script>
+
+</body>
+
+</html>
