@@ -9,8 +9,10 @@ import logging
 logger = logging.getLogger('quote_current_crypto_foxbit')
 
 
+from . import QuoteCurrentCryptoBase
 
-class QuoteCurrentCrypto:
+
+class QuoteCurrentCryptoFoxbit(QuoteCurrentCryptoBase):
 
     def quote(self):
 

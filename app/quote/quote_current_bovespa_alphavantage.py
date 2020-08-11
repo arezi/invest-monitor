@@ -9,17 +9,20 @@ from urllib.request import urlopen, Request
 
 INTERVAL = 1
 
-apikey = '56ORNX93NINA1MXI'
+apikey = os.environ['INVEST_MONITOR_ALPHAVANTAGE_APIKEY']
 
-# alphavantage allow max 5 requests per sec.  :(
+# alphavantage allow max 5 requests per minute.  :(
 
 import logging
 logger = logging.getLogger('quote_current_bovespa_alphavantage')
 
 
-class QuoteCurrentBovespaAlphavantage:
+from . import QuoteCurrentBovespaBase
 
-    def quote(ticker_list):
+
+class QuoteCurrentBovespaAlphavantage(QuoteCurrentBovespaBase):
+
+    def quote(self, ticker_list):
         key_series = 'Time Series ('+str(INTERVAL)+'min)'
 
         quotes = {}

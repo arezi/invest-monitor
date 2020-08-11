@@ -12,11 +12,11 @@ import datetime
 import logging
 logger = logging.getLogger('quote_current_bovespa_bvbmf')
 
+from . import QuoteCurrentBovespaBase
 
 
 
-
-class QuoteCurrentBovespaBvbmf:
+class QuoteCurrentBovespaBvbmf(QuoteCurrentBovespaBase):
 
     def quote(self, ticker_list):
 
