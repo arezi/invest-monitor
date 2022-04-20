@@ -52,6 +52,9 @@
                         Notificações
                         </label>
                     </div>
+                    <div class="form-check form-check-inline">
+                        <button @click="updatePlanning()">update Planejamento</button>
+                    </div>
                     <span v-show="loading">(loading)</span>
                 </div>
                 <div class="col-lg-1 text-right">
@@ -69,10 +72,12 @@
                     <div style="border: 1px solid #888; padding: 10px;">
                         <div>
                             - Variação da carteira hoje:
-                            <span v-bind:style="{color : portfolio.total.quote_variation_avg >= 0 ? 'green' : 'red'}">
-                                {{portfolio.total.quote_variation_avg | decimal}}% 
+                            <span v-bind:style="{color : portfolio.total.quote_variation >= 0 ? 'green' : 'red'}">
+                                {{portfolio.total.quote_variation | decimal}}% 
                             </span>
-                            <span style="font-size: xx-small;">(média)</span>
+                            <span style="font-size: xx-small;" v-bind:style="{color : portfolio.total.quote_variation >= 0 ? 'green' : 'red'}">
+                                (R$ {{portfolio.total.quote_variation_gain | decimal}})
+                            </span>
                         </div>
                         <div>
                             - ROI: 
@@ -120,7 +125,7 @@
                                 <span @click="collapseAll(true)" style="cursor: pointer;">(-)</span>
                             </th>
                             <th scope="col" v-show="conf.columns.quote" @dblclick="conf.columns.quote=false">Cotação</th>
-                            <th scope="col" v-show="conf.columns.target" @dblclick="conf.columns.target=false">Alvo</th>
+                            <th scope="col" v-show="conf.columns.planning" @dblclick="conf.columns.planning=false">Planejamento</th>
                             <th scope="col" v-show="conf.columns.price" @dblclick="conf.columns.price=false">Compra</th>
                             <th scope="col" v-show="conf.columns.date" @dblclick="conf.columns.date=false">Data</th>
                             <th scope="col" v-show="conf.columns.roi" @dblclick="conf.columns.roi=false">Retorno</th>
@@ -147,8 +152,12 @@
                                     {{stk.quote.price | decimal}} 
                                     (<span v-bind:style="{color : stk.quote.variation >= 0 ? 'green' : 'red', fontSize: 'xx-small'}">{{stk.quote.variation | decimal}}%</span>)
                                 </td>
-                                <td v-show="conf.columns.target">
-                                    {{stk.target | decimal}}
+                                <td v-show="conf.columns.planning">
+                                    <div v-if="planning[stk.ticker]">
+                                        <span v-show="planning[stk.ticker].stop_gain">SG {{planning[stk.ticker].stop_gain | decimal}}</span>
+                                        <span v-show="planning[stk.ticker].stop_gain && planning[stk.ticker].stop_loss"> | </span>
+                                        <span v-show="planning[stk.ticker].stop_loss">SL {{planning[stk.ticker].stop_loss | decimal}}</span>
+                                    </div>
                                 </td>
                                 <td v-show="conf.columns.price">
                                     {{stk.calc.price | decimal}}
@@ -185,7 +194,7 @@
                                     </td>
                                     <td v-show="conf.columns.quote">
                                     </td>
-                                    <td v-show="conf.columns.target">
+                                    <td v-show="conf.columns.planning">
                                     </td>
                                     <td v-show="conf.columns.price">
                                         {{op.price | decimal}}
@@ -225,8 +234,13 @@
                                     {{portfolio.total.quote_variation_avg | decimal}}% 
                                 </span>
                                 <span style="font-size: xx-small;">(média)</span>
+                                <br/>
+                                <span v-bind:style="{color : portfolio.total.quote_variation_avg >= 0 ? 'green' : 'red'}">
+                                    {{portfolio.total.quote_variation | decimal}}% 
+                                </span>
+                                <span style="font-size: xx-small;">(carteira)</span>
                             </td>
-                            <td v-show="conf.columns.target"></td>
+                            <td v-show="conf.columns.planning"></td>
                             <td v-show="conf.columns.price"></td>
                             <td v-show="conf.columns.date"></td>
                             <td v-show="conf.columns.roi" v-bind:style="{color : portfolio.total.roi >= 0 ? 'green' : 'red'}">
@@ -246,8 +260,20 @@
             </div>
 
             <div id="details" v-if="sel != null" class="shadow">
-                <h2>{{sel.ticket}}</h2>
-                <div class="box-notes">{{sel.notes}}</div>
+                <h2>{{sel.ticker}}</h2>
+                <div class="box-planning" v-if="planning[sel.ticker] != null">
+                    <div style="font-size: xx-small; text-align: right;">
+                        {{planning[sel.ticker].date | date}}
+                    </div>
+                    <ul>
+                        <li v-show="planning[sel.ticker].fair_value">Valor Justo: {{planning[sel.ticker].fair_value | decimal}}</li>
+                        <li v-show="planning[sel.ticker].stop_gain">Stop Gain: {{planning[sel.ticker].stop_gain | decimal}}</li>
+                        <li v-show="planning[sel.ticker].stop_loss">Stop Loss: {{planning[sel.ticker].stop_loss | decimal}}</li>
+                        <li v-show="planning[sel.ticker].alert_gain">Alert Gain: {{planning[sel.ticker].alert_gain | decimal}}</li>
+                        <li v-show="planning[sel.ticker].alert_loss">Alert Loss: {{planning[sel.ticker].alert_loss | decimal}}</li>
+                    </ul>
+                    <div class="box-notes">Notes: {{planning[sel.ticker].notes}}</div>
+                </div>
                 <ul>
                     <li>Ganho: R$ {{sel.calc.gain | decimal}}</li>
                     <li>Investido: R$ {{sel.calc.total - sel.calc.gain | decimal}}</li>
@@ -307,13 +333,18 @@
             border-radius: 10px;
         }
 
-        .box-notes {
-            font-weight: bold;
+        .box-planning {
             padding:10px; 
             margin-bottom: 20px;
+            border: 1px solid blue;
+        }
+        .box-notes {
+            font-size: xx-small;
+            padding:3px; 
+            margin-bottom: 10px;
             border: 1px dotted orange;
         }
-
+        
 
     </style>
 
@@ -336,8 +367,11 @@ var app = new Vue({
     data: {
         portfolio : null,
         stocks : null,
+        planning : null, // last active planning
         lastUpdate: null,
         sel: null,
+
+        notified: {},
 
         conf: null,
         confDefault: {
@@ -347,7 +381,7 @@ var app = new Vue({
                 links: true,
                 ticker: true,
                 quote: true,
-                target: false,
+                planning: true,
                 price: true,
                 date: true,
                 roi: true,
@@ -375,6 +409,7 @@ var app = new Vue({
         // FUTURE load from localStorage
         this.conf = JSON.parse(JSON.stringify(this.confDefault));
 
+        this.updatePlanning();
 
         this.portifolioQuote();
 
@@ -396,6 +431,17 @@ var app = new Vue({
             console.log('salvou')
             console.log(JSON.stringify(this.conf))
             // FUTURE save in localStorage
+        },
+
+        updatePlanning: function () {
+            this.$http.get('../api/planning').then(rs => {
+                this.planning = {};
+                for(let pln of rs.body) {
+                    if (pln.active) {
+                        this.planning[pln.ticker] = pln;
+                    }
+                }
+            });
         },
 
         portifolioQuote: function () {
@@ -421,18 +467,24 @@ var app = new Vue({
 
                     stocks.push(stock);
 
-                    if (stock.target && stock.quote.price >= stock.target) {
-                        // notificar
-                        if (this.conf.notifyEnabled) { //  &&  ! stock.notified
-                            var n = new Notification("Papel atingiu: "+stock.ticker, {
-                                body: stock.ticker+" atual "+stock.quote.price+"\n"+"Alvo: "+stock.target,
+                    if (this.conf.notifyEnabled && this.planning[ticker] && !this.notified[ticker]) {
+                        let pln = this.planning[ticker];
+                        if ( (pln.alert_gain && stock.quote.price >= pln.alert_gain)
+                                || (pln.stop_gain && stock.quote.price >= pln.stop_gain) ) {
+                            var n = new Notification("Stop Gain: "+stock.ticker, {
+                                body: stock.ticker+" atual "+stock.quote.price+"\n"+"Alvo: "+pln.stop_gain,
                                 icon: 'growth-icon-512x512.png'
                             });
+                            this.notified[ticker] = new Date(); // TODO fazer um setInterval pra remover, depois de x minutos
                         }
-                        //stock.notified = !stock.notified;
-                    }
-                    else {
-                        //stock.notified = false;
+                        if ( (pln.alert_loss && stock.quote.price <= pln.alert_loss)
+                                || (pln.stop_gain && stock.quote.price >= pln.stop_gain) ) {
+                            var n = new Notification("Stop Gain: "+stock.ticker, {
+                                body: stock.ticker+" atual "+stock.quote.price+"\n"+"Alvo: "+pln.stop_gain,
+                                icon: 'growth-icon-512x512.png'
+                            });
+                            this.notified[ticker] = new Date(); // TODO fazer um setInterval pra remover, depois de x minutos
+                        }
                     }
 
                 }

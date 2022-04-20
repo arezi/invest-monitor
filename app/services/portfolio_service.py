@@ -9,10 +9,10 @@ from app.quote.factory import get_quote_current
 
 from app.data import operation_repository
 
-def get_stocks():
+def get_stocks(on_date=str(datetime.now()).split(' ')[0]):
     
-    active = operation_repository.list_active()
-
+    active = operation_repository.list_active(on_date)
+    
     # build the portfolio (stocks that haven't been sold)    
     stocks = {}
     for op in active:
@@ -94,6 +94,16 @@ def quote():
 
     total['roi'] = (total['total'] - total['invested']) / total['invested'] * 100 if total['invested'] > 0 else 0
     total['quote_variation_avg'] = total['quote_variation_avg'] / len(quotes.keys()) if len(quotes.keys()) > 0 else 0
+
+    
+    # calcule ratio variation over portfolio
+    total['quote_variation'] = 0
+    for ticker in quotes.keys():
+        stk = stocks[ticker]
+        stk['calc']['ratio'] = stk['calc']['total'] / total['total']
+        if 'quote' in stk and 'variation' in stk['quote']:
+            total['quote_variation'] += stk['calc']['ratio'] * stk['quote']['variation']
+    total['quote_variation_gain'] = total['total'] * total['quote_variation'] / 100
 
 
     portfolio = {}

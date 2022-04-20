@@ -8,14 +8,14 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-
+def to_dict(rs):
+    return [dict(it.items()) for it in rs]
 
 
 from sqlalchemy.inspection import inspect
 class Serializer(object):
-    def serialize_attrs(self):
+    def serialize(self):
         return {c: getattr(self, c) for c in inspect(self).attrs.keys()}
-
 
 
 def dump_datetime(value):
@@ -48,12 +48,35 @@ class Operation(db.Model, Serializer):
         return "<Op: {}>".format(self.ticker)
 
     def serialize(self):
-        return {
-            'id' : self.id,
-            'ticker' : self.ticker,
-            'price' : self.price,
-            'buy' : self.buy,
-            'sell' : self.sell,
-            'date': dump_date(self.date),
-        }
+        dto = super().serialize()
+        dto['date'] = dump_date(self.date)
+        return dto
+
+
+
+
+
+
+class Planning(db.Model, Serializer):
+    __tablename__ = "planning"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(10), nullable=False)
+    active = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.Date, nullable=True)
+    stop_gain = db.Column(db.Float, nullable=True)
+    stop_loss = db.Column(db.Float, nullable=True)
+    alert_gain = db.Column(db.Float, nullable=True)
+    alert_loss = db.Column(db.Float, nullable=True)
+    fair_value = db.Column(db.Float, nullable=True)
+    notes = db.Column(db.String(1000), nullable=True)
+
+    def __repr__(self):
+        return "<Pln: {}>".format(self.ticker)
+
+    def serialize(self):
+        dto = super().serialize()
+        dto['date'] = dump_date(self.date)
+        return dto
+
 

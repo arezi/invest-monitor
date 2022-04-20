@@ -10,20 +10,22 @@ from .models import db
 
 class OperationRepository:
 
-    def list_active(self):
+    def list_active(self, on_date):
         sql = """
         select d.ticker_amount, d.ticker_last_operation, o.*
             from operation o,
                 (select ticker, 
                         sum(buy) - sum(sell) AS ticker_amount,
                         max(date) AS ticker_last_operation 
-                    from operation 
-                    group by ticker) as d 
+                   from operation 
+                  where date <= '%s'
+                  group by ticker) as d 
             where o.ticker = d.ticker 
             and o.buy > 0 
             and d.ticker_amount > 0 
+            and o.date <= '%s'
             order by d.ticker_last_operation desc, o.ticker, o.date desc
-        """
+        """%(on_date, on_date)
         rs = db.session.execute(text(sql))
         return [dict(it.items()) for it in rs]
 

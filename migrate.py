@@ -35,7 +35,7 @@ with conn:
 
     updated = False
 
-    for file in os.listdir('migrations'):
+    for file in sorted(os.listdir('migrations')):
         if current_version >= file.split('.')[0]:
             continue
 
