@@ -6,7 +6,9 @@ from app.data.models import db
 from app.controllers import indexes_api
 from app.controllers import operation_api
 from app.controllers import performance_api
+from app.controllers import planning_api
 from app.controllers import portfolio_api
+
 
 
 import os
@@ -87,5 +89,6 @@ def not_found(error):
 app.register_blueprint(indexes_api.blueprint, url_prefix="/api/indexes")
 app.register_blueprint(operation_api.blueprint, url_prefix="/api/operation")
 app.register_blueprint(performance_api.blueprint, url_prefix="/api/performance")
+app.register_blueprint(planning_api.blueprint, url_prefix="/api/planning")
 app.register_blueprint(portfolio_api.blueprint, url_prefix="/api/portfolio")
 
