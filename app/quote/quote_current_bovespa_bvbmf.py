@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 
 
 import requests
+import urllib3
 import datetime
 
 
@@ -26,12 +27,19 @@ class QuoteCurrentBovespaBvbmf(QuoteCurrentBovespaBase):
         header = { 'Accept': 'application/xml' }
 
         try:
-            req = requests.get(url, headers=header)
+            urllib3.disable_warnings() # because of the verify=False
+            req = requests.get(url, headers=header, verify=False)
         except Exception as err:
             logger.error("OS error: {0}".format(err))
             return None
 
-        tree =  ET.ElementTree(ET.fromstring(req.content))
+        try:
+            tree =  ET.ElementTree(ET.fromstring(req.content))
+        except Exception as err:
+            logger.info('bvmf content: '+str(req.content))
+            logger.error("OS error: {0}".format(err))
+            return None
+
         root = tree.getroot()
 
         quotes = {}

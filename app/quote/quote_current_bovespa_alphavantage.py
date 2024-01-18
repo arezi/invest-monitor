@@ -2,7 +2,7 @@
 import json
 import time
 from datetime import datetime, timedelta
-
+import os
 
 from urllib.request import urlopen, Request
 
@@ -28,7 +28,7 @@ class QuoteCurrentBovespaAlphavantage(QuoteCurrentBovespaBase):
         quotes = {}
 
         for cod in ticker_list:
-            if cod == 'IBOV': # nao suporta IBOV, ver se tem outro codigo q se refere
+            if cod == 'IBOV': # doesn't support IBOV. (maybe another code)
                 continue
 
             logger.debug('Quoting '+cod)

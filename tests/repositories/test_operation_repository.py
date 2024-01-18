@@ -13,7 +13,7 @@ class TestOperationRepository(AbstractTestRepository):
         self.rep = OperationRepository()
 
     def test_list_active(self):
-        self.rep.list_active()
+        self.rep.list_active('2020-02-21')
 
     def test_sum_sold_current_month(self):
         self.rep.sum_sold_current_month('BOVESPA')
