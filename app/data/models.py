@@ -8,9 +8,16 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-def to_dict(rs):
-    return [dict(it.items()) for it in rs]
+from sqlalchemy.engine.cursor import CursorResult
 
+def to_dict(rs, keys=None):
+    #return [dict(it.items()) for it in rs] # doesn't work more :(
+    if keys == None:
+        keys = rs.keys()
+    res = []
+    for it in rs:
+        res.append(dict(zip(keys, it)))
+    return res
 
 from sqlalchemy.inspection import inspect
 class Serializer(object):

@@ -3,7 +3,7 @@
 from sqlalchemy.sql import text
 
 
-from .models import db
+from .models import db, to_dict
 
 
 
@@ -27,7 +27,7 @@ class OperationRepository:
             order by d.ticker_last_operation desc, o.ticker, o.date desc
         """%(on_date, on_date)
         rs = db.session.execute(text(sql))
-        return [dict(it.items()) for it in rs]
+        return to_dict(rs)
 
 
     def sum_sold_current_month(self, stocks_exchange):

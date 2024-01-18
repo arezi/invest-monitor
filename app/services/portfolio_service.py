@@ -67,14 +67,16 @@ def quote():
             op['calc']['amount_ratio'] = op['amount'] / stocks[ticker]['amount']
             sumtk['price'] += op['price'] * op['calc']['amount_ratio']
 
-            op['calc']['roi'] = (quote_price - op['price']) / op['price'] * 100  
-            sumtk['roi'] += op['calc']['roi'] * op['calc']['amount_ratio']
+            op['calc']['roi'] = (quote_price - op['price']) / op['price'] * 100 if quote_price is not None else None
+            if quote_price is not None:
+                sumtk['roi'] += op['calc']['roi'] * op['calc']['amount_ratio'] 
 
             op['calc']['invested'] = op['amount'] * op['price']
             sumtk['invested'] += op['calc']['invested']
 
-            op['calc']['gain'] = (quote_price - op['price']) * op['amount'] 
-            sumtk['gain'] += op['calc']['gain']
+            op['calc']['gain'] = (quote_price - op['price']) * op['amount']  if quote_price is not None else None
+            if quote_price is not None:
+                sumtk['gain'] += op['calc']['gain']
 
             op['calc']['total'] = (op['price'] * op['amount']) + op['calc']['gain']  
             sumtk['total'] += op['calc']['total']
@@ -82,8 +84,9 @@ def quote():
             op['calc']['days'] = (datetime.now() - datetime.strptime(op['date'], '%Y-%m-%d') ).days
             sumtk['days'] += op['calc']['days'] * op['calc']['amount_ratio']
 
-            op['calc']['roi_per_day'] = (op['calc']['roi'] / op['calc']['days']) if op['calc']['days'] > 0 else op['calc']['roi']
-            sumtk['roi_per_day'] += op['calc']['roi_per_day'] * op['calc']['amount_ratio']
+            if quote_price is not None:
+                op['calc']['roi_per_day'] = (op['calc']['roi'] / op['calc']['days']) if op['calc']['days'] > 0 else op['calc']['roi']
+                sumtk['roi_per_day'] += op['calc']['roi_per_day'] * op['calc']['amount_ratio']
 
         stocks[ticker]['calc'] = sumtk
         
