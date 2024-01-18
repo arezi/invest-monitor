@@ -19,7 +19,7 @@ def __load_quote_module(mod_name, expected_subclass):
 
 quote_current_exchanges = {}
 
-mod_current_bovespa = 'app.quote.quote_current_bovespa_bvbmf' if 'INVEST_MONITOR_MOD_QUOTE_CURRENT_BOVESPA' not in os.environ else os.environ['INVEST_MONITOR_MOD_QUOTE_CURRENT_BOVESPA']
+mod_current_bovespa = 'app.quote.quote_current_bovespa_yfinance' if 'INVEST_MONITOR_MOD_QUOTE_CURRENT_BOVESPA' not in os.environ else os.environ['INVEST_MONITOR_MOD_QUOTE_CURRENT_BOVESPA']
 quote_current_exchanges['BOVESPA'] = __load_quote_module(mod_current_bovespa, QuoteCurrentBovespaBase)
 
 mod_current_bovespa = 'app.quote.quote_current_crypto_foxbit' if 'INVEST_MONITOR_MOD_QUOTE_CURRENT_CRYPTO' not in os.environ else os.environ['INVEST_MONITOR_MOD_QUOTE_CURRENT_CRYPTO']
