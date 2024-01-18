@@ -32,3 +32,7 @@ Open http://localhost:4000
 ```bash
 ./tests.sh
 ```
+
+
+## TODO
+. use uvicorn in server

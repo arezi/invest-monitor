@@ -1,4 +1,6 @@
 __pycache__
+
+.venv
+
 demo.db
 
-quote_current_bovespa_easynv.py
