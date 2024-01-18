@@ -447,7 +447,7 @@ var app = new Vue({
         portifolioQuote: function () {
 
             var hours = new Date().getHours();
-            if ((hours < 10 || hours >= 17) && this.lastUpdate != null) {
+            if ((hours < 10 || hours >= 18) && this.lastUpdate != null) {
                 this.closed = true;
                 return;
             }
