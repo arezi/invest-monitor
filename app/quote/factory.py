@@ -22,8 +22,8 @@ quote_current_exchanges = {}
 mod_current_bovespa = 'app.quote.quote_current_bovespa_yfinance' if 'INVEST_MONITOR_MOD_QUOTE_CURRENT_BOVESPA' not in os.environ else os.environ['INVEST_MONITOR_MOD_QUOTE_CURRENT_BOVESPA']
 quote_current_exchanges['BOVESPA'] = __load_quote_module(mod_current_bovespa, QuoteCurrentBovespaBase)
 
-mod_current_bovespa = 'app.quote.quote_current_crypto_foxbit' if 'INVEST_MONITOR_MOD_QUOTE_CURRENT_CRYPTO' not in os.environ else os.environ['INVEST_MONITOR_MOD_QUOTE_CURRENT_CRYPTO']
-quote_current_exchanges['CRYPTO'] = __load_quote_module(mod_current_bovespa, QuoteCurrentCryptoBase)
+mod_current_crypto = 'app.quote.quote_current_crypto_foxbit' if 'INVEST_MONITOR_MOD_QUOTE_CURRENT_CRYPTO' not in os.environ else os.environ['INVEST_MONITOR_MOD_QUOTE_CURRENT_CRYPTO']
+quote_current_exchanges['CRYPTO'] = __load_quote_module(mod_current_crypto, QuoteCurrentCryptoBase)
 
 
 

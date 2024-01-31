@@ -20,9 +20,9 @@ class QuoteCurrentBovespaYfinance(QuoteCurrentBovespaBase):
         for tk in ticker_list:
             yf_map[tk] = '^BVSP' if tk == 'IBOV' else tk+'.SA'
 
-        yf_tickets = ' '.join(yf_map.values())
+        yf_tickers = ' '.join(yf_map.values())
 
-        dfs = yf.download(yf_tickets, period='1d', auto_adjust = True, progress=False)
+        dfs = yf.download(yf_tickers, period='1d', auto_adjust = True, progress=False)
 
         quotes = {}
 
